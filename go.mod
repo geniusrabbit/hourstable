@@ -1,1 +1,1 @@
-module github.com/demdxx/hourstable
+module github.com/geniusrabbit/hourstable
