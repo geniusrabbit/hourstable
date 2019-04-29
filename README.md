@@ -1,5 +1,9 @@
 # hourstable data type
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/geniusrabbit/hourstable)](https://goreportcard.com/report/github.com/geniusrabbit/hourstable)
+[![GoDoc](https://godoc.org/github.com/geniusrabbit/hourstable?status.svg)](https://godoc.org/github.com/geniusrabbit/hourstable)
+[![Coverage Status](https://coveralls.io/repos/github/geniusrabbit/hourstable/badge.svg)](https://coveralls.io/github/geniusrabbit/hourstable)
+
 Implementation of the hour-table for a week (represents active hours by days of the week).
 It could be used as the SQL compatible data-type ad stored as String or JSON type in relational or document-oriented DB like PostgreSQL, MySQL, Oracle, MongoDB, etc.
 
