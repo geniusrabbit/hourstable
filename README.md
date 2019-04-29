@@ -1,5 +1,6 @@
 # hourstable data type
 
+[![Build Status](https://travis-ci.org/geniusrabbit/hourstable.svg?branch=master)](https://travis-ci.org/geniusrabbit/hourstable)
 [![Go Report Card](https://goreportcard.com/badge/github.com/geniusrabbit/hourstable)](https://goreportcard.com/report/github.com/geniusrabbit/hourstable)
 [![GoDoc](https://godoc.org/github.com/geniusrabbit/hourstable?status.svg)](https://godoc.org/github.com/geniusrabbit/hourstable)
 [![Coverage Status](https://coveralls.io/repos/github/geniusrabbit/hourstable/badge.svg)](https://coveralls.io/github/geniusrabbit/hourstable)
