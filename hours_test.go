@@ -9,42 +9,73 @@ import (
 
 func Test_TestHour(t *testing.T) {
 	var tests = []struct {
-		hours   Hours
-		weekDay time.Weekday
-		hour    byte
-		result  bool
+		hours      Hours
+		weekDay    time.Weekday
+		hour       byte
+		allActive  bool
+		notActive  bool
+		testResult bool
 	}{
 		{
-			hours:   MustHoursByString("*"),
-			weekDay: time.Monday,
-			hour:    1,
-			result:  true,
+			hours:      MustHoursByString("*"),
+			weekDay:    time.Monday,
+			hour:       1,
+			allActive:  true,
+			notActive:  false,
+			testResult: true,
 		},
 		{
-			hours:   MustHoursByString("1000000"),
-			weekDay: time.Sunday,
-			hour:    1,
-			result:  false,
+			hours:      MustHoursByString("1000000"),
+			weekDay:    time.Sunday,
+			hour:       1,
+			allActive:  false,
+			notActive:  false,
+			testResult: false,
 		},
 		{
-			hours:   MustHoursByString("1001100"),
-			weekDay: time.Sunday,
-			hour:    4,
-			result:  true,
+			hours:      MustHoursByString("1001100"),
+			weekDay:    time.Sunday,
+			hour:       4,
+			allActive:  false,
+			notActive:  false,
+			testResult: true,
 		},
 		{
-			hours:   MustHoursByString("10011001111110011001111.1001100"),
-			weekDay: time.Monday,
-			hour:    4,
-			result:  true,
+			hours:      MustHoursByString("10011001111110011001111.1001100"),
+			weekDay:    time.Monday,
+			hour:       4,
+			allActive:  false,
+			notActive:  false,
+			testResult: true,
+		},
+		{
+			hours: MustHoursByString(DisabledDayHoursString + DisabledDayHoursString + DisabledDayHoursString +
+				DisabledDayHoursString + DisabledDayHoursString + DisabledDayHoursString + DisabledDayHoursString),
+			weekDay:    time.Monday,
+			hour:       4,
+			allActive:  false,
+			notActive:  true,
+			testResult: false,
 		},
 	}
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test_%d", i), func(t *testing.T) {
-			if test.hours.TestHour(test.weekDay, test.hour) != test.result {
-				t.Errorf("test hour fail: %d, %d => %t", test.weekDay, test.hour, test.result)
-				t.Error(test.hours.String())
+			if test.hours.TestHour(test.weekDay, test.hour) != test.testResult {
+				t.Errorf("test hour fail: %d, %d => %t", test.weekDay, test.hour, test.testResult)
+			}
+
+			if test.hours.IsAllActive() != test.allActive {
+				t.Errorf("IsAllActive should be %v", test.allActive)
+			}
+
+			if test.hours.IsNoActive() != test.notActive {
+				t.Errorf("IsNoActive should be %v", test.notActive)
+			}
+
+			test.hours.SetHour(test.weekDay, test.hour, !test.testResult)
+			if test.hours.TestHour(test.weekDay, test.hour) == test.testResult {
+				t.Errorf("test2 hour fail: %d, %d => %t", test.weekDay, test.hour, !test.testResult)
 			}
 		})
 	}
