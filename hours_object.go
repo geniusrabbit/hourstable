@@ -11,17 +11,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 //easyjson:json
 type timetableJSON struct {
-	Monday    string `json:"mon,omitempty"`
-	Tuesday   string `json:"tue,omitempty"`
-	Wednesday string `json:"wed,omitempty"`
-	Thursday  string `json:"thu,omitempty"`
-	Friday    string `json:"fri,omitempty"`
-	Saturday  string `json:"sat,omitempty"`
-	Sunday    string `json:"sun,omitempty"`
+	Monday    string `json:"mon,omitempty" yaml:"mon,omitempty"`
+	Tuesday   string `json:"tue,omitempty" yaml:"tue,omitempty"`
+	Wednesday string `json:"wed,omitempty" yaml:"wed,omitempty"`
+	Thursday  string `json:"thu,omitempty" yaml:"thu,omitempty"`
+	Friday    string `json:"fri,omitempty" yaml:"fri,omitempty"`
+	Saturday  string `json:"sat,omitempty" yaml:"sat,omitempty"`
+	Sunday    string `json:"sun,omitempty" yaml:"sun,omitempty"`
 }
 
 func (tt *timetableJSON) ToHours() Hours {
@@ -51,8 +53,8 @@ func (tt *timetableJSON) FromHours(hours Hours) {
 	tt.Saturday = binaryToHoursShort(hours, time.Saturday)
 }
 
-// HoursJSON supports the JSON format of storing
-type HoursJSON Hours
+// HoursObject supports the JSON format of storing
+type HoursObject Hours
 
 // HoursByJSON decodes JSON format of timetable
 func HoursByJSON(data []byte) (Hours, error) {
@@ -67,7 +69,7 @@ func HoursByJSON(data []byte) (Hours, error) {
 }
 
 // String implementation of fmt.Stringer
-func (h HoursJSON) String() string {
+func (h HoursObject) String() string {
 	var timetable timetableJSON
 	timetable.FromHours(Hours(h))
 	data, _ := json.Marshal(&timetable)
@@ -75,12 +77,12 @@ func (h HoursJSON) String() string {
 }
 
 // Value implementation of valuer for database/sql
-func (h HoursJSON) Value() (driver.Value, error) {
+func (h HoursObject) Value() (driver.Value, error) {
 	return h.MarshalJSON()
 }
 
 // Scan - Implement the database/sql scanner interface
-func (h *HoursJSON) Scan(value interface{}) (err error) {
+func (h *HoursObject) Scan(value any) (err error) {
 	if value == nil {
 		*h = nil
 		return nil
@@ -90,11 +92,11 @@ func (h *HoursJSON) Scan(value interface{}) (err error) {
 	switch v := value.(type) {
 	case []byte:
 		if newHours, err = HoursByJSON(v); err == nil {
-			*h = HoursJSON(newHours)
+			*h = HoursObject(newHours)
 		}
 	case string:
 		if newHours, err = HoursByJSON([]byte(v)); err == nil {
-			*h = HoursJSON(newHours)
+			*h = HoursObject(newHours)
 		}
 	default:
 		err = fmt.Errorf("[hours_json] unsupported decode type %T", value)
@@ -103,60 +105,89 @@ func (h *HoursJSON) Scan(value interface{}) (err error) {
 }
 
 // Merge from another hours
-func (h HoursJSON) Merge(h2 Hours) {
+func (h HoursObject) Merge(h2 Hours) {
 	Hours(h).Merge(h2)
 }
 
 // IsAllActive then return the true
-func (h HoursJSON) IsAllActive() bool {
+func (h HoursObject) IsAllActive() bool {
 	return Hours(h).IsAllActive()
 }
 
 // IsNoActive then return the true
-func (h HoursJSON) IsNoActive() bool {
+func (h HoursObject) IsNoActive() bool {
 	return Hours(h).IsNoActive()
 }
 
 // Equal comarison of two hour tables
-func (h HoursJSON) Equal(h2 Hours) bool {
+func (h HoursObject) Equal(h2 Hours) bool {
 	return Hours(h).Equal(h2)
 }
 
 // TestHour hour
-func (h HoursJSON) TestHour(weekDay time.Weekday, hour byte) bool {
+func (h HoursObject) TestHour(weekDay time.Weekday, hour byte) bool {
 	return Hours(h).TestHour(weekDay, hour)
 }
 
 // TestTime hour
-func (h HoursJSON) TestTime(t time.Time) bool {
+func (h HoursObject) TestTime(t time.Time) bool {
 	return Hours(h).TestTime(t)
 }
 
 // SetHour as active or no
-func (h *HoursJSON) SetHour(weekDay time.Weekday, hour byte, active bool) {
+func (h *HoursObject) SetHour(weekDay time.Weekday, hour byte, active bool) {
 	(*Hours)(h).SetHour(weekDay, hour, active)
 }
 
 // MarshalJSON implements the functionality of json.Marshaler interface
-func (h HoursJSON) MarshalJSON() ([]byte, error) {
+func (h HoursObject) MarshalJSON() ([]byte, error) {
 	var timetable timetableJSON
 	timetable.FromHours(Hours(h))
 	return json.Marshal(&timetable)
 }
 
 // UnmarshalJSON implements the functionality of json.Unmarshaler interface
-func (h *HoursJSON) UnmarshalJSON(data []byte) error {
+func (h *HoursObject) UnmarshalJSON(data []byte) error {
 	newHours, err := HoursByJSON(data)
 	if err != nil {
 		return err
 	}
-	*h = HoursJSON(newHours)
+	*h = HoursObject(newHours)
 	return nil
 }
 
+// MarshalYAML implements the functionality of yaml.Marshaler interface
+func (h HoursObject) MarshalYAML() (any, error) {
+	var timetable timetableJSON
+	timetable.FromHours(Hours(h))
+	return &timetable, nil
+}
+
+// UnmarshalYAML implements the functionality of yaml.Unmarshaler interface
+func (h *HoursObject) UnmarshalYAML(node *yaml.Node) error {
+	var timetable timetableJSON
+	if err := node.Decode(&timetable); err != nil {
+		return err
+	}
+	*h = HoursObject(timetable.ToHours())
+	return nil
+}
+
+// Clone returns a copy of HoursObject
+func (h HoursObject) Clone() HoursObject {
+	if h == nil {
+		return nil
+	}
+	newHours := make(Hours, len(h))
+	copy(newHours, h)
+	return HoursObject(newHours)
+}
+
 var (
-	_ json.Marshaler   = (HoursJSON)(nil)
-	_ json.Unmarshaler = (*HoursJSON)(nil)
-	_ driver.Valuer    = (HoursJSON)(nil)
-	_ sql.Scanner      = (*HoursJSON)(nil)
+	_ json.Marshaler   = (HoursObject)(nil)
+	_ json.Unmarshaler = (*HoursObject)(nil)
+	_ yaml.Marshaler   = (HoursObject)(nil)
+	_ yaml.Unmarshaler = (*HoursObject)(nil)
+	_ driver.Valuer    = (HoursObject)(nil)
+	_ sql.Scanner      = (*HoursObject)(nil)
 )

@@ -13,6 +13,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ErrTooMuchHoursForDecode tells that hours more then for a week
@@ -71,7 +73,7 @@ func (h Hours) Value() (driver.Value, error) {
 }
 
 // Scan - Implement the database/sql scanner interface
-func (h *Hours) Scan(value interface{}) (err error) {
+func (h *Hours) Scan(value any) (err error) {
 	if value == nil {
 		*h = nil
 		return nil
@@ -111,7 +113,7 @@ func (h Hours) Merge(h2 Hours) {
 
 // IsAllActive then return the true
 func (h Hours) IsAllActive() bool {
-	if len(h) < 1 {
+	if len(h) == 0 {
 		return true
 	}
 	if len(h) < 24 {
@@ -229,9 +231,46 @@ func (h *Hours) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalYAML implements the functionality of yaml.Marshaler interface
+func (h Hours) MarshalYAML() (any, error) {
+	return h.String(), nil
+}
+
+// UnmarshalYAML implements the functionality of yaml.Unmarshaler interface
+func (h *Hours) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if err := node.Decode(&s); err != nil {
+		return err
+	}
+
+	if s == "*" || s == ActiveWeekHoursString {
+		*h = nil
+		return nil
+	}
+
+	newHours, err := HoursByString(s)
+	if err != nil {
+		return err
+	}
+	*h = newHours
+	return nil
+}
+
+// Clone returns a copy of Hours
+func (h Hours) Clone() Hours {
+	if h == nil {
+		return nil
+	}
+	newHours := make(Hours, len(h))
+	copy(newHours, h)
+	return newHours
+}
+
 var (
 	_ json.Marshaler   = (Hours)(nil)
 	_ json.Unmarshaler = (*Hours)(nil)
+	_ yaml.Marshaler   = (Hours)(nil)
+	_ yaml.Unmarshaler = (*Hours)(nil)
 	_ driver.Valuer    = (Hours)(nil)
 	_ sql.Scanner      = (*Hours)(nil)
 )
