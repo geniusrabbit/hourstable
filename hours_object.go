@@ -28,7 +28,7 @@ type timetableJSON struct {
 
 func (tt *timetableJSON) ToHours() Hours {
 	hours := make(Hours, 24)
-	tt.ToHoursObject(hours)
+	_ = tt.ToHoursObject(hours)
 	return hours
 }
 

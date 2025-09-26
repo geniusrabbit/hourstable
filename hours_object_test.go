@@ -467,6 +467,7 @@ func TestHoursObject_Merge(t *testing.T) {
 			if tt.h2 != nil || len(tt.h1) > 0 {
 				// Verify merge actually happened by checking it's different or expected
 				// This is mainly to ensure the method executes without error
+				t.Logf("Merged hours: %s", tt.h1.String())
 			}
 		})
 	}
